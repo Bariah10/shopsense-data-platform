@@ -1,0 +1,108 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "order_id": {
+      "maxLength": 32,
+      "minLength": 6,
+      "title": "Order Id",
+      "type": "string"
+    },
+    "customer_id": {
+      "maxLength": 32,
+      "minLength": 4,
+      "title": "Customer Id",
+      "type": "string"
+    },
+    "customer_email": {
+      "maxLength": 120,
+      "title": "Customer Email",
+      "type": "string"
+    },
+    "product_id": {
+      "minLength": 3,
+      "title": "Product Id",
+      "type": "string"
+    },
+    "product_name": {
+      "maxLength": 120,
+      "minLength": 2,
+      "title": "Product Name",
+      "type": "string"
+    },
+    "category": {
+      "title": "Category",
+      "type": "string"
+    },
+    "quantity": {
+      "exclusiveMinimum": 0,
+      "maximum": 100,
+      "title": "Quantity",
+      "type": "integer"
+    },
+    "unit_price": {
+      "exclusiveMinimum": 0,
+      "title": "Unit Price",
+      "type": "number"
+    },
+    "currency": {
+      "enum": [
+        "SAR",
+        "USD",
+        "AED"
+      ],
+      "title": "Currency",
+      "type": "string"
+    },
+    "city": {
+      "maxLength": 60,
+      "minLength": 2,
+      "title": "City",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "created",
+        "paid",
+        "shipped",
+        "delivered",
+        "cancelled"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "order_ts": {
+      "format": "date-time",
+      "title": "Order Ts",
+      "type": "string"
+    },
+    "delivered_ts": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Delivered Ts"
+    }
+  },
+  "required": [
+    "order_id",
+    "customer_id",
+    "customer_email",
+    "product_id",
+    "product_name",
+    "category",
+    "quantity",
+    "unit_price",
+    "currency",
+    "city",
+    "status",
+    "order_ts"
+  ],
+  "title": "OrderEvent",
+  "type": "object"
+}
