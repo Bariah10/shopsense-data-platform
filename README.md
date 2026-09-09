@@ -5,8 +5,8 @@ into a Delta Lake medallion architecture, and serves a retrieval-augmented suppo
 top of the company knowledge base — with a quality gate and lineage wrapped around the whole run.
 
 > **Training program:** Modern Data Engineering for AI Systems — SDAIA Academy (delivered via Learning Space)
-> **Cohort / session dates:** `<FILL IN: e.g. 7–11 September 2026>` · **Trainer:** Mohammed Albeladi
-> **Trainee:** `<FILL IN: your full name>`
+> **Cohort / session dates:** `<FILL IN: e.g. 6–10 September 2026>` · **Trainer:** Mohammed Albeladi
+> **Trainee:** `<FILL IN: Bariah Altayar>`
 > SDAIA Academy on GitHub: <https://github.com/SDAIAAcademy>
 
 ---
