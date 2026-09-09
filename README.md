@@ -33,8 +33,8 @@ Both problems are data-engineering problems. ShopSense solves them with one pipe
 | **Silver** | Typed, cleaned, one row per `order_id`. Maintained with a real Delta **MERGE (upsert)** on that business key, so late-arriving status updates correct the existing row instead of duplicating it. Schema enforcement refuses any write that does not match the table. |
 | **Gold** | Genuine aggregates at a different grain from Silver: daily revenue by category and city, and per-customer lifetime value with segment labels. |
 | **RAG** | The knowledge base is chunked, embedded, and indexed in ChromaDB. Retrieval is **hybrid** — dense vector search plus BM25, fused with **Reciprocal Rank Fusion** — then reordered by a **cross-encoder reranker**. Answers are grounded in retrieved text, carry citations, and the assistant refuses to answer when confidence is below the floor. |
-| **Orchestration** *(day 4)* | An Airflow DAG wires the stages together so a failed quality gate halts the run before downstream stages execute. |
-| **Quality + lineage** *(day 5)* | Great Expectations suites that actually gate the pipeline, and OpenLineage `START` / `COMPLETE` / `FAIL` events per stage. |
+| **Quality + lineage** | Great Expectations suites gate each layer. `gate()` raises on failure, so bad data cannot reach the next stage. Every stage emits OpenLineage `START` / `COMPLETE` / `FAIL` events, with the failure reason carried in an `errorMessage` facet. |
+| **Orchestration** | An Airflow DAG wires all of it together: `ingest → gate → silver → gate → (gold ‖ rag refresh) → complete`. A run against a deliberately corrupted batch fails the bronze gate and leaves every downstream task `upstream_failed` — proof the gate halts the pipeline rather than just logging a warning. |
 
 ## 3. Scope
 
@@ -120,9 +120,11 @@ They are rebuilt by running the notebooks, and they live in Google Drive between
 No local installation is needed. Every library is installed by the first cells of each notebook:
 
 ```
-kafka-python >= 2.2      pydantic >= 2.7        faker
-pyspark == 3.5.3         delta-spark == 3.3.0
-sentence-transformers    chromadb >= 1.0        rank-bm25
+kafka-python >= 2.2         pydantic >= 2.7          faker
+pyspark == 3.5.3            delta-spark == 3.3.0     deltalake >= 1.0
+sentence-transformers       chromadb >= 1.0          rank-bm25
+apache-airflow == 3.1.8     great-expectations == 1.22.0
+openlineage-python == 1.53.0
 ```
 
 Apache Kafka 3.7.1 is downloaded and started **inside the Colab VM** in KRaft mode — a real broker,
@@ -139,6 +141,13 @@ from there.
    About 6 minutes; the Delta JARs are downloaded from Maven the first time the Spark session starts.
 3. **Open `notebooks/03_rag_pipeline.ipynb`** → `Runtime` → `Run all`.
    About 4 minutes, most of it downloading the embedding and reranker models.
+4. **Open `notebooks/04_quality_gate_lineage.ipynb`** → `Runtime` → `Run all`.
+   About 3 minutes. Writes `src/` — notebook 05 imports it.
+5. **Open `notebooks/05_airflow_orchestration.ipynb`** → `Runtime` → `Run all`.
+   About 10 minutes; installing Airflow is the slow part.
+
+> Airflow 2.x does not support Python 3.13, which is what Colab runs, so the DAG targets
+> **Airflow 3.1.8** with the official constraint file for the running interpreter.
 
 Then `File` → `Save`, and push the executed notebooks (see
 [`docs/github_guide_ar.md`](docs/github_guide_ar.md) or `notebooks/00_push_to_github.ipynb`).
@@ -213,6 +222,38 @@ hybrid + rerank    1.000  0.950
 Plus grounded answers with `[S1] [S2]` citations and a source list, and a refusal for an
 out-of-scope question.
 
+**Notebook 04 — quality gate**
+
+```
+GATE PASSED on bronze: 8/8 expectations, 347 rows
+
+Quality gate FAILED on bronze: 4/8 expectations failed
+  - expect_column_values_to_not_be_null on customer_id: 1 unexpected value(s)
+  - expect_column_values_to_be_between on quantity: 1 unexpected value(s)
+  - expect_column_values_to_be_in_set on currency: 1 unexpected value(s)
+  - expect_column_values_to_be_in_set on category: 1 unexpected value(s)
+
+  START     build_silver_demo
+  COMPLETE  build_silver_demo
+  START     quality_gate_bronze_demo
+  FAIL      quality_gate_bronze_demo
+```
+
+**Notebook 05 — orchestration**
+
+```
+DAG RUN 1  ->  success            DAG RUN 2  ->  failed
+  ingest_orders        success      ingest_orders        success
+  quality_gate_bronze  success      quality_gate_bronze  failed
+  build_silver         success      build_silver         upstream_failed
+  quality_gate_silver  success      quality_gate_silver  upstream_failed
+  build_gold           success      build_gold           upstream_failed
+  refresh_rag_index    success      refresh_rag_index    upstream_failed
+  pipeline_complete    success      pipeline_complete    upstream_failed
+
+event types: {'START': 9, 'COMPLETE': 8, 'FAIL': 1}
+```
+
 *(Exact numbers vary run to run — the event generator is random.)*
 
 ## 9. Rubric coverage
@@ -222,8 +263,8 @@ out-of-scope question.
 | 1 | Ingestion — Kafka + schema contract + DLQ | 20 | `notebooks/01_ingestion_kafka.ipynb` |
 | 2 | Delta lakehouse — Bronze/Silver/Gold + MERGE + schema enforcement | 25 | `notebooks/02_delta_lakehouse.ipynb` |
 | 3 | RAG — chunking, embeddings, vector store, hybrid + RRF, reranking, citations | 25 | `notebooks/03_rag_pipeline.ipynb` |
-| 4 | Orchestration — Airflow DAG | 15 | *in progress* |
-| 5 | Quality gate + lineage — Great Expectations + OpenLineage | 15 | *in progress* |
+| 4 | Orchestration — Airflow DAG halting on a failed gate | 15 | `notebooks/05_airflow_orchestration.ipynb`, `dags/shopsense_pipeline.py` |
+| 5 | Quality gate + lineage — Great Expectations + OpenLineage | 15 | `notebooks/04_quality_gate_lineage.ipynb`, `src/quality.py`, `src/lineage.py` |
 
 ## 10. Attribution
 
