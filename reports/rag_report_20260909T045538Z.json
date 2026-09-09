@@ -1,0 +1,267 @@
+{
+  "run_id": "20260909T045538Z",
+  "stage": "rag",
+  "documents": 12,
+  "chunks": 24,
+  "chunking": {
+    "strategy": "sentence-aware packing",
+    "target_chars": 420,
+    "overlap_chars": 90
+  },
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dim": 384,
+  "vector_store": {
+    "engine": "chromadb",
+    "collection": "shopsense_kb",
+    "vectors": 24,
+    "path": "/content/drive/MyDrive/sdaia_capstone/vector_store"
+  },
+  "retrieval": {
+    "dense": "cosine kNN",
+    "sparse": "BM25Okapi",
+    "fusion": "reciprocal rank fusion (k=60)",
+    "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "confidence_floor": 0.3
+  },
+  "evaluation": [
+    {
+      "strategy": "dense only",
+      "Hit@3": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "strategy": "bm25 only",
+      "Hit@3": 1.0,
+      "MRR": 0.95
+    },
+    {
+      "strategy": "hybrid (RRF)",
+      "Hit@3": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "strategy": "hybrid + rerank",
+      "Hit@3": 1.0,
+      "MRR": 1.0
+    }
+  ],
+  "demo_answers": [
+    {
+      "question": "My card was declined but the bank put a hold on my money. What happens now?",
+      "answer": "If the customer sees a hold on the card for a failed order, that hold is an authorisation and is released by the issuing bank within 3 to 5 business days. [S1] A payment can fail for three main reasons: insufficient funds, a card that is not enabled for online or international transactions, or a failed 3-D Secure verification. [S2] When a payment fails, the order is created but stays in status created and no stock is reserved. [S2] Cash-on-delivery orders that are refused at the door are marked cancelled and no charge is made, but three refusals within 90 days disable cash on delivery for that customer. [S3]",
+      "grounded": true,
+      "top_confidence": 0.89,
+      "citations": [
+        {
+          "tag": "S1",
+          "title": "Failed Payments and Declined Cards",
+          "source": "data/knowledge_base/payment-failures.md",
+          "chunk_id": "payment-failures::01",
+          "confidence": 0.89
+        },
+        {
+          "tag": "S2",
+          "title": "Failed Payments and Declined Cards",
+          "source": "data/knowledge_base/payment-failures.md",
+          "chunk_id": "payment-failures::00",
+          "confidence": 0.006
+        },
+        {
+          "tag": "S3",
+          "title": "Cancelling an Order",
+          "source": "data/knowledge_base/order-cancellation.md",
+          "chunk_id": "order-cancellation::01",
+          "confidence": 0.0
+        },
+        {
+          "tag": "S4",
+          "title": "Cancelling an Order",
+          "source": "data/knowledge_base/order-cancellation.md",
+          "chunk_id": "order-cancellation::00",
+          "confidence": 0.0
+        }
+      ]
+    },
+    {
+      "question": "How long does delivery to Buraydah take?",
+      "answer": "Standard delivery inside Riyadh, Jeddah and Dammam is 1 to 2 business days. [S1] Delivery to Buraydah, Unaizah, Abha and Madinah is 2 to 4 business days. [S1] Express delivery is available in Riyadh only and guarantees same-day delivery for orders placed before 13:00 local time, at an extra charge of 25 SAR. [S1] Orders above 200 SAR ship free with standard delivery. [S1]",
+      "grounded": true,
+      "top_confidence": 1.0,
+      "citations": [
+        {
+          "tag": "S1",
+          "title": "Shipping Service Levels",
+          "source": "data/knowledge_base/shipping-sla.md",
+          "chunk_id": "shipping-sla::00",
+          "confidence": 1.0
+        },
+        {
+          "tag": "S2",
+          "title": "Returns and Refunds Policy",
+          "source": "data/knowledge_base/returns-policy.md",
+          "chunk_id": "returns-policy::01",
+          "confidence": 0.051
+        },
+        {
+          "tag": "S3",
+          "title": "Returns and Refunds Policy",
+          "source": "data/knowledge_base/returns-policy.md",
+          "chunk_id": "returns-policy::00",
+          "confidence": 0.019
+        },
+        {
+          "tag": "S4",
+          "title": "Missing, Late and Wrong Deliveries",
+          "source": "data/knowledge_base/delivery-issues.md",
+          "chunk_id": "delivery-issues::00",
+          "confidence": 0.006
+        }
+      ]
+    },
+    {
+      "question": "What happens to a record that fails the data contract?",
+      "answer": "Records that fail the Pydantic data contract are written to the dead-letter topic orders.dlq with a rejection_reason field, and to the quarantine folder on disk. [S1] A payment can fail for three main reasons: insufficient funds, a card that is not enabled for online or international transactions, or a failed 3-D Secure verification. [S2] When a payment fails, the order is created but stays in status created and no stock is reserved. [S2] If the customer sees a hold on the card for a failed order, that hold is an authorisation and is released by the issuing bank within 3 to 5 business days. [S4]",
+      "grounded": true,
+      "top_confidence": 0.995,
+      "citations": [
+        {
+          "tag": "S1",
+          "title": "Data Pipeline Runbook",
+          "source": "data/knowledge_base/pipeline-runbook.md",
+          "chunk_id": "pipeline-runbook::00",
+          "confidence": 0.995
+        },
+        {
+          "tag": "S2",
+          "title": "Failed Payments and Declined Cards",
+          "source": "data/knowledge_base/payment-failures.md",
+          "chunk_id": "payment-failures::00",
+          "confidence": 0.012
+        },
+        {
+          "tag": "S3",
+          "title": "Account Access and Security",
+          "source": "data/knowledge_base/account-security.md",
+          "chunk_id": "account-security::01",
+          "confidence": 0.0
+        },
+        {
+          "tag": "S4",
+          "title": "Failed Payments and Declined Cards",
+          "source": "data/knowledge_base/payment-failures.md",
+          "chunk_id": "payment-failures::01",
+          "confidence": 0.0
+        }
+      ]
+    },
+    {
+      "question": "How many reward points do I get and when do they expire?",
+      "answer": "Customers earn 1 reward point for every 10 SAR of delivered order value. [S1] Points are credited 7 days after delivery, once the return window for that item has closed. [S1] Points expire 12 months after they are earned. [S1] Points are not earned on delivery fees, gift cards, or orders paid entirely with store credit. [S2]",
+      "grounded": true,
+      "top_confidence": 0.997,
+      "citations": [
+        {
+          "tag": "S1",
+          "title": "ShopSense Rewards",
+          "source": "data/knowledge_base/loyalty-program.md",
+          "chunk_id": "loyalty-program::00",
+          "confidence": 0.997
+        },
+        {
+          "tag": "S2",
+          "title": "ShopSense Rewards",
+          "source": "data/knowledge_base/loyalty-program.md",
+          "chunk_id": "loyalty-program::01",
+          "confidence": 0.0
+        },
+        {
+          "tag": "S3",
+          "title": "Account Access and Security",
+          "source": "data/knowledge_base/account-security.md",
+          "chunk_id": "account-security::01",
+          "confidence": 0.0
+        },
+        {
+          "tag": "S4",
+          "title": "Returns and Refunds Policy",
+          "source": "data/knowledge_base/returns-policy.md",
+          "chunk_id": "returns-policy::00",
+          "confidence": 0.0
+        }
+      ]
+    },
+    {
+      "question": "Is support available on Friday?",
+      "answer": "Support is available Sunday to Thursday from 09:00 to 21:00 and on Saturday from 12:00 to 20:00. [S1] Messages received outside these hours are answered on the next working day. [S1] SAR, or if the customer has already contacted support three times about the same order. [S2] Mada, Visa, Mastercard and Apple Pay are supported. [S3]",
+      "grounded": true,
+      "top_confidence": 1.0,
+      "citations": [
+        {
+          "tag": "S1",
+          "title": "Support Hours and Escalation",
+          "source": "data/knowledge_base/contact-and-escalation.md",
+          "chunk_id": "contact-and-escalation::00",
+          "confidence": 1.0
+        },
+        {
+          "tag": "S2",
+          "title": "Support Hours and Escalation",
+          "source": "data/knowledge_base/contact-and-escalation.md",
+          "chunk_id": "contact-and-escalation::01",
+          "confidence": 0.0
+        },
+        {
+          "tag": "S3",
+          "title": "Failed Payments and Declined Cards",
+          "source": "data/knowledge_base/payment-failures.md",
+          "chunk_id": "payment-failures::01",
+          "confidence": 0.0
+        },
+        {
+          "tag": "S4",
+          "title": "Account Access and Security",
+          "source": "data/knowledge_base/account-security.md",
+          "chunk_id": "account-security::01",
+          "confidence": 0.0
+        }
+      ]
+    },
+    {
+      "question": "What is the capital of Japan?",
+      "answer": "I could not find this in the ShopSense knowledge base, so I will not guess. (best retrieval confidence 0.00 < floor 0.3)",
+      "grounded": false,
+      "top_confidence": 0.0,
+      "citations": [
+        {
+          "tag": "S1",
+          "title": "Shipping Service Levels",
+          "source": "data/knowledge_base/shipping-sla.md",
+          "chunk_id": "shipping-sla::00",
+          "confidence": 0.0
+        },
+        {
+          "tag": "S2",
+          "title": "Missing, Late and Wrong Deliveries",
+          "source": "data/knowledge_base/delivery-issues.md",
+          "chunk_id": "delivery-issues::01",
+          "confidence": 0.0
+        },
+        {
+          "tag": "S3",
+          "title": "Missing, Late and Wrong Deliveries",
+          "source": "data/knowledge_base/delivery-issues.md",
+          "chunk_id": "delivery-issues::00",
+          "confidence": 0.0
+        },
+        {
+          "tag": "S4",
+          "title": "Shipping Service Levels",
+          "source": "data/knowledge_base/shipping-sla.md",
+          "chunk_id": "shipping-sla::01",
+          "confidence": 0.0
+        }
+      ]
+    }
+  ],
+  "finished_at": "2026-09-09T04:55:38.696272+00:00"
+}
