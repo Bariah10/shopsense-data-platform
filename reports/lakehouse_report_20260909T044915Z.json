@@ -1,0 +1,46 @@
+{
+  "run_id": "20260909T044915Z",
+  "stage": "lakehouse",
+  "engine": "pyspark 3.5.3 + delta-spark 3.3.0",
+  "source_file": "orders_valid_20260908T194115Z.jsonl",
+  "bronze_rows": 347,
+  "silver_rows": 322,
+  "silver_distinct_keys": 322,
+  "merge_metrics": {
+    "numOutputRows": "322",
+    "numTargetBytesAdded": "22193",
+    "numTargetRowsInserted": "97",
+    "numTargetFilesAdded": "1",
+    "materializeSourceTimeMs": "875",
+    "numTargetRowsMatchedDeleted": "0",
+    "numTargetFilesRemoved": "1",
+    "numTargetRowsMatchedUpdated": "15",
+    "executionTimeMs": "9464",
+    "numTargetDeletionVectorsUpdated": "0",
+    "numTargetRowsCopied": "210",
+    "rewriteTimeMs": "1562",
+    "numTargetRowsUpdated": "15",
+    "numTargetDeletionVectorsRemoved": "0",
+    "numTargetRowsDeleted": "0",
+    "scanTimeMs": "7003",
+    "numSourceRows": "322",
+    "numTargetDeletionVectorsAdded": "0",
+    "numTargetChangeFilesAdded": "0",
+    "numTargetRowsNotMatchedBySourceUpdated": "0",
+    "numTargetRowsNotMatchedBySourceDeleted": "0",
+    "numTargetBytesRemoved": "17289"
+  },
+  "schema_enforcement": {
+    "extra_undeclared_column": "REFUSED: [_LEGACY_ERROR_TEMP_DELTA_0007] A schema mismatch detected when writing to the Delta table (Table ID: 56faf267-c2bc-427c-8bd8-8cd9ac959dad).",
+    "wrong_type_quantity": "REFUSED: [DELTA_FAILED_TO_MERGE_FIELDS] Failed to merge fields 'quantity' and 'quantity'"
+  },
+  "gold_daily_category_revenue_rows": 166,
+  "gold_customer_segments_rows": 112,
+  "paths": {
+    "bronze": "/content/lakehouse/bronze/orders",
+    "silver": "/content/lakehouse/silver/orders",
+    "gold_revenue": "/content/lakehouse/gold/daily_category_revenue",
+    "gold_customer": "/content/lakehouse/gold/customer_segments"
+  },
+  "finished_at": "2026-09-09T04:49:23.137472+00:00"
+}
