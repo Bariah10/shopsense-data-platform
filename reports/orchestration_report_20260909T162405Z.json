@@ -1,0 +1,75 @@
+{
+  "run_id": "20260909T162405Z",
+  "stage": "orchestration",
+  "engine": "apache-airflow 3.1.8 (python 3.13)",
+  "dag_id": "shopsense_pipeline",
+  "schedule": "@daily",
+  "tasks": [
+    "ingest_orders",
+    "quality_gate_bronze",
+    "build_silver",
+    "quality_gate_silver",
+    "build_gold",
+    "refresh_rag_index",
+    "pipeline_complete"
+  ],
+  "dependencies": {
+    "ingest_orders": [
+      "quality_gate_bronze"
+    ],
+    "quality_gate_bronze": [
+      "build_silver"
+    ],
+    "build_silver": [
+      "quality_gate_silver"
+    ],
+    "quality_gate_silver": [
+      "build_gold",
+      "refresh_rag_index"
+    ],
+    "build_gold": [
+      "pipeline_complete"
+    ],
+    "refresh_rag_index": [
+      "pipeline_complete"
+    ],
+    "pipeline_complete": []
+  },
+  "run_1_clean": {
+    "dag_run_state": "success",
+    "task_states": {
+      "build_gold": "success",
+      "build_silver": "success",
+      "ingest_orders": "success",
+      "pipeline_complete": "success",
+      "quality_gate_bronze": "success",
+      "quality_gate_silver": "success",
+      "refresh_rag_index": "success"
+    }
+  },
+  "run_2_corrupt": {
+    "dag_run_state": "failed",
+    "task_states": {
+      "build_gold": "upstream_failed",
+      "build_silver": "upstream_failed",
+      "ingest_orders": "success",
+      "pipeline_complete": "upstream_failed",
+      "quality_gate_bronze": "failed",
+      "quality_gate_silver": "upstream_failed",
+      "refresh_rag_index": "upstream_failed"
+    },
+    "halted_by_gate": [
+      "build_gold",
+      "build_silver",
+      "pipeline_complete",
+      "quality_gate_silver",
+      "refresh_rag_index"
+    ]
+  },
+  "lineage_events": {
+    "START": 9,
+    "COMPLETE": 8,
+    "FAIL": 1
+  },
+  "finished_at": "2026-09-09T16:24:05.740292+00:00"
+}

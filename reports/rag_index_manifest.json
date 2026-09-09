@@ -1,0 +1,54 @@
+{
+  "documents": 12,
+  "chunks": 24,
+  "per_document": [
+    {
+      "doc": "account-security.md",
+      "chunks": 2
+    },
+    {
+      "doc": "contact-and-escalation.md",
+      "chunks": 2
+    },
+    {
+      "doc": "data-dictionary.md",
+      "chunks": 2
+    },
+    {
+      "doc": "delivery-issues.md",
+      "chunks": 2
+    },
+    {
+      "doc": "loyalty-program.md",
+      "chunks": 2
+    },
+    {
+      "doc": "order-cancellation.md",
+      "chunks": 2
+    },
+    {
+      "doc": "payment-failures.md",
+      "chunks": 2
+    },
+    {
+      "doc": "pipeline-runbook.md",
+      "chunks": 2
+    },
+    {
+      "doc": "pricing-and-vat.md",
+      "chunks": 2
+    },
+    {
+      "doc": "returns-policy.md",
+      "chunks": 2
+    },
+    {
+      "doc": "shipping-sla.md",
+      "chunks": 2
+    },
+    {
+      "doc": "warranty.md",
+      "chunks": 2
+    }
+  ]
+}
