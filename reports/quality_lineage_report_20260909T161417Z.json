@@ -1,0 +1,41 @@
+{
+  "run_id": "20260909T161417Z",
+  "stage": "quality_and_lineage",
+  "libraries": {
+    "great_expectations": "1.22.0",
+    "openlineage_python": "1.53.0",
+    "deltalake": "1.6.3"
+  },
+  "suites": {
+    "bronze": 8,
+    "silver": 6
+  },
+  "bronze_gate": {
+    "rows": 347,
+    "passed": 8,
+    "failed": 0,
+    "success": true
+  },
+  "bronze_gate_on_corrupt_data": {
+    "failed_expectations": 4,
+    "success": false
+  },
+  "silver_gate": {
+    "rows": 322,
+    "passed": 6,
+    "failed": 0
+  },
+  "lineage_events_file": "/content/drive/MyDrive/sdaia_capstone/reports/lineage_events.jsonl",
+  "lineage_event_types": [
+    "COMPLETE",
+    "FAIL",
+    "START"
+  ],
+  "modules_written": [
+    "__init__.py",
+    "lineage.py",
+    "quality.py",
+    "transforms.py"
+  ],
+  "finished_at": "2026-09-09T16:14:17.262631+00:00"
+}
