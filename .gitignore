@@ -1,0 +1,60 @@
+# ---- secrets: never commit these ----------------------------------------
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+token.txt
+service-account*.json
+
+# ---- generated data artefacts (rebuilt by running the notebooks) --------
+lakehouse/
+vector_store/
+chroma_store/
+spark-warehouse/
+data/bronze_landing/*.jsonl
+data/silver/
+data/gold/
+!data/bronze_landing/.gitkeep
+
+# keep a small sample of the quarantine as evidence, ignore the rest
+data/quarantine/*.jsonl
+!data/quarantine/sample_rejected.jsonl
+
+# ---- Kafka / Spark local runtime ---------------------------------------
+kafka_2.13-*/
+kafka_2.13-*.tgz
+kafka.log
+/tmp/kraft-combined-logs/
+metastore_db/
+derby.log
+*.crc
+_SUCCESS
+
+# ---- Python ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# ---- model caches ------------------------------------------------------
+.cache/
+huggingface/
+sentence_transformers/
+
+# ---- OS / editor -------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ---- Airflow runtime (metadata DB, logs, parsed dags) ------------------
+airflow/
+airflow.db
+airflow.cfg
+webserver_config.py
+logs/
+lakehouse_dag/
+data/bronze_landing_corrupt.jsonl
