@@ -5,8 +5,8 @@ into a Delta Lake medallion architecture, and serves a retrieval-augmented suppo
 top of the company knowledge base — with a quality gate and lineage wrapped around the whole run.
 
 > **Training program:** Modern Data Engineering for AI Systems — SDAIA Academy (delivered via Learning Space)
-> **Cohort / session dates:** 6–10 September 2026 · **Trainer:** Mohammed Albeladi
-> **Trainee:** Bariah Altayar
+> **Cohort / session dates:** `<FILL IN: e.g. 7–11 September 2026>` · **Trainer:** Mohammed Albeladi
+> **Trainee:** `<FILL IN: your full name>`
 > SDAIA Academy on GitHub: <https://github.com/SDAIAAcademy>
 
 ---
@@ -171,90 +171,89 @@ Google Drive / MyDrive / sdaia_capstone /
 └── reports/*.json
 ```
 
-## 8. Expected output
+## 8. Output from the committed run
+
+These are the actual figures captured in the notebooks in this repository, not an illustrative
+example. The event generator is random, so a fresh run will differ.
 
 **Notebook 01 — ingestion**
 
 ```
 consumed          : 425
-accepted (bronze) : 331   (77.9%)
-rejected  (dlq)   :  94   (22.1%)
+accepted (bronze) : 347   (81.7%)
+rejected  (dlq)   :  78   (18.3%)
 
-rejections by field / rule:
-    14  category
-    12  currency
-    11  quantity
-    ...
-messages sitting in orders.dlq: 94
+rejections by rule: status 13 · currency 12 · unit_price 10 · record 10
+                    category 7 · customer_email 7 · customer_id 7
+                    discount_hack 6 · quantity 6
+messages sitting in orders.dlq: 78
 ```
-Plus a printed sample of rejected payloads, each with the rule it broke.
 
 **Notebook 02 — lakehouse**
 
 ```
-bronze rows : 331     distinct order_id: 306
-silver rows after batch 1 : 214
-silver rows after MERGE   : 306   distinct order_id: 306
+bronze rows : 347      distinct order_id: 322
+silver rows after batch 1 : 225
+silver rows after MERGE   : 322      distinct order_id: 322
 
-MERGE metrics:
-  numTargetRowsInserted   92
-  numTargetRowsUpdated    17
+MERGE metrics:  numTargetRowsInserted 97 · numTargetRowsUpdated 15 · numSourceRows 322
 
 [extra_undeclared_column] write REFUSED by Delta
+    [_LEGACY_ERROR_TEMP_DELTA_0007] A schema mismatch detected when writing to the Delta table
 [wrong_type_quantity]     write REFUSED by Delta
-silver rows after the two bad writes : 306   <- unchanged
+    [DELTA_FAILED_TO_MERGE_FIELDS] Failed to merge fields 'quantity' and 'quantity'
+silver rows after the two bad writes : 322   <- unchanged
 
-silver grain : one row per order      -> 306 rows
-gold   grain : date x category x city ->  88 rows
+silver grain : one row per order      -> 322 rows
+gold   grain : date x category x city -> 166 rows
+gold   grain : one row per customer   -> 112 rows
 ```
 
 **Notebook 03 — RAG**
 
 ```
 12 documents -> 24 chunks     embedding dim: 384     vectors stored: 24
-
-strategy           Hit@3   MRR
-dense only         0.800  0.717
-bm25 only          0.700  0.633
-hybrid (RRF)       0.900  0.808
-hybrid + rerank    1.000  0.950
 ```
-Plus grounded answers with `[S1] [S2]` citations and a source list, and a refusal for an
-out-of-scope question.
 
-**Notebook 04 — quality gate**
+The refusal threshold is calibrated at run time (section 8.1) rather than hard-coded, and the
+four-way retrieval comparison over 18 labelled questions is reported on Hit@1, Hit@3 and MRR in
+section 9. The measured table for the committed run is exported to
+[`reports/rag_eval_table.md`](reports/rag_eval_table.md) so this README cannot drift out of step
+with it. Read Hit@1: over a 12-document corpus Hit@3 saturates and cannot separate the
+configurations.
+
+**Notebook 04 — quality gate and lineage**
 
 ```
 GATE PASSED on bronze: 8/8 expectations, 347 rows
+GATE PASSED on silver: 6/6 expectations, 322 rows
 
 Quality gate FAILED on bronze: 4/8 expectations failed
-  - expect_column_values_to_not_be_null on customer_id: 1 unexpected value(s)
-  - expect_column_values_to_be_between on quantity: 1 unexpected value(s)
-  - expect_column_values_to_be_in_set on currency: 1 unexpected value(s)
-  - expect_column_values_to_be_in_set on category: 1 unexpected value(s)
-
-  START     build_silver_demo
-  COMPLETE  build_silver_demo
-  START     quality_gate_bronze_demo
-  FAIL      quality_gate_bronze_demo
+  - expect_column_values_to_not_be_null  on customer_id: 1 unexpected value(s)
+  - expect_column_values_to_be_between   on quantity:    1 unexpected value(s)
+  - expect_column_values_to_be_in_set    on currency:    1 unexpected value(s)
+  - expect_column_values_to_be_in_set    on category:    1 unexpected value(s)
 ```
 
 **Notebook 05 — orchestration**
 
 ```
-DAG RUN 1  ->  success            DAG RUN 2  ->  failed
-  ingest_orders        success      ingest_orders        success
-  quality_gate_bronze  success      quality_gate_bronze  failed
-  build_silver         success      build_silver         upstream_failed
-  quality_gate_silver  success      quality_gate_silver  upstream_failed
-  build_gold           success      build_gold           upstream_failed
-  refresh_rag_index    success      refresh_rag_index    upstream_failed
-  pipeline_complete    success      pipeline_complete    upstream_failed
+DAG RUN 1  ->  success              DAG RUN 2  ->  failed
+  ingest_orders        success        ingest_orders        success
+  quality_gate_bronze  success        quality_gate_bronze  failed
+  build_silver         success        build_silver         upstream_failed
+  quality_gate_silver  success        quality_gate_silver  upstream_failed
+  build_gold           success        build_gold           upstream_failed
+  refresh_rag_index    success        refresh_rag_index    upstream_failed
+  pipeline_complete    success        pipeline_complete    upstream_failed
 
+tasks that never ran because the gate failed: 5
 event types: {'START': 9, 'COMPLETE': 8, 'FAIL': 1}
-```
 
-*(Exact numbers vary run to run — the event generator is random.)*
+kafka.orders.valid            --[ingest_orders]-->  lakehouse_dag.bronze.orders
+lakehouse_dag.bronze.orders   --[build_silver]-->   lakehouse_dag.silver.orders
+lakehouse_dag.silver.orders   --[build_gold]-->     lakehouse_dag.gold.daily_category_revenue
+```
 
 ## 9. Rubric coverage
 
@@ -270,7 +269,7 @@ event types: {'START': 9, 'COMPLETE': 8, 'FAIL': 1}
 
 Completed as the capstone project for **Modern Data Engineering for AI Systems**, delivered by
 **SDAIA Academy** via Learning Space. Trainer: Mohammed Albeladi.
-Cohort / session dates: 6–10 September 2026.
+Cohort / session dates: `<FILL IN>`.
 
 SDAIA Academy on GitHub: <https://github.com/SDAIAAcademy>
 
