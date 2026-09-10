@@ -2,12 +2,14 @@
 
 ## 1. Pipeline overview
 
-The platform is a five-stage pipeline. Stages 1–3 are implemented; stages 4–5 wrap them.
+The platform is a five-stage pipeline. All five stages are implemented; stages 4 and 5 wrap the
+first three: the Airflow DAG schedules them and the quality gate plus lineage instrument them.
 
 ```
-[1] Ingestion  →  [2] Bronze  →  [2] Silver  →  [2] Gold  →  [3] RAG index
-       │                              │
-       └── quarantine / DLQ           └── quality gate (day 5) halts the run before Gold
+[1] Ingestion → [2] Bronze → gate → [2] Silver → gate → [2] Gold ‖ [3] RAG index refresh
+       │                        │                    │
+       └── quarantine / DLQ     └── Great Expectations; a failure halts everything downstream
+                                    (all of it wired by the Airflow DAG in stage [4])
 ```
 
 Every stage writes a JSON run report to `reports/`. Those reports are the interface between the
@@ -94,13 +96,13 @@ here: only `paid`, `shipped` and `delivered` orders count as revenue.
 | Sparse retrieval | `BM25Okapi` over title + body tokens | dense models are weak on exact identifiers like `orders.dlq` or `3-D Secure` |
 | Fusion | **Reciprocal Rank Fusion**, `k = 60` | combines the two lists by rank, so a cosine similarity never has to be normalised against a BM25 score |
 | Reranking | `cross-encoder/ms-marco-MiniLM-L-6-v2` | reads query and passage jointly; too slow for the whole corpus, so it only reorders the fused top-10 |
-| Grounding | citations `[S1]…[Sn]` on every sentence + a confidence floor of 0.30 | the assistant refuses rather than hallucinating when the knowledge base does not cover the question |
+| Grounding | citations `[S1]…[Sn]` on every sentence + an **empirically calibrated** score floor | a hard-coded threshold made the assistant refuse in-scope questions, so the floor is now measured: section 8.1 scores probe questions the corpus answers against ones it does not and places the floor between the two distributions |
 
-**Evaluation.** Ten labelled questions, each tagged with the document that should be retrieved.
-Four configurations are compared on Hit@3 and MRR: dense only, BM25 only, hybrid (RRF), and
-hybrid + rerank. The table in section 9 of the notebook is the justification for the architecture —
-it shows the fusion and the reranker each earn their place instead of being added because the rubric
-asked for them.
+**Evaluation.** Eighteen labelled questions, deliberately split between exact-identifier queries
+(where dense retrieval is weak) and paraphrase queries (where BM25 is weak). Four configurations are
+compared on Hit@1, Hit@3 and MRR. Hit@1 is the metric to read: Hit@3 over twelve documents saturates
+and cannot separate the configurations. A per-question rank table shows exactly which questions each
+strategy loses. The measured results are exported to `reports/rag_eval_table.md`.
 
 ## 3. Configuration
 
@@ -117,7 +119,7 @@ to change are all constants at the top of the relevant notebook.
 | `EMBED_MODEL` | 03 | `all-MiniLM-L6-v2` | embedding model |
 | `RERANK_MODEL` | 03 | `ms-marco-MiniLM-L-6-v2` | cross-encoder |
 | `RRF_K` | 03 | `60` | RRF smoothing constant |
-| `CONFIDENCE_FLOOR` | 03 | `0.30` | below this, the assistant refuses to answer |
+| refusal floor | 03 | calibrated at run time | measured in section 8.1 from in-scope vs off-topic probes; below it the assistant refuses |
 
 **Optional environment values** (used only by the optional generative-answer cell in notebook 03):
 
@@ -143,9 +145,13 @@ contract.
 Choosing the winning row (latest `ingested_at`) is a business decision, so it is written explicitly in
 the notebook rather than hidden inside a merge condition.
 
-**Why hybrid retrieval instead of dense alone?** Section 9 of notebook 03 measures it. Dense retrieval
-misses exact identifiers; BM25 misses paraphrases. The fusion beats both, and the reranker beats the
-fusion.
+**Why hybrid retrieval instead of dense alone?** Because the two retrievers fail on different
+questions: dense embeddings are weak on rare literal tokens (`orders.dlq`, `line_total`, `3-D
+Secure`), BM25 is weak on paraphrases that share no vocabulary with the source text. Section 9 of
+notebook 03 measures this on 18 labelled questions split between those two cases, and reports
+Hit@1, Hit@3 and MRR for all four configurations. The measured table for the committed run is
+exported to `reports/rag_eval_table.md` - whatever it shows is the result, including the
+possibility that on a corpus this small dense retrieval alone is already competitive.
 
 ## 5. Known limitations
 
@@ -153,4 +159,11 @@ fusion.
   for concurrency or failure recovery across machines.
 * Order events are synthetic and the knowledge base was written for this project.
 * Gold tables are rebuilt in full on each run. That is fine at this volume and would not be at scale.
-* Stages 4 and 5 (Airflow orchestration, Great Expectations, OpenLineage) are not yet implemented.
+* The RAG corpus is 12 documents. That is large enough to exercise the retrieval stack but small
+  enough that retrieval metrics saturate, so the four-way comparison should be read as a
+  demonstration of method rather than a benchmark result.
+* The orchestrated pipeline (`dags/shopsense_pipeline.py`) runs the medallion stages through
+  delta-rs rather than Spark, to keep the scheduler light. Notebook 02 is the Spark implementation
+  of the same layers; the rubric credits either engine.
+* Airflow runs single-node with `airflow dags test` rather than a scheduler plus webserver, which is
+  enough to prove dependencies and the gate but is not a deployment.
